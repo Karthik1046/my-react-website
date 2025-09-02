@@ -1,70 +1,204 @@
-# Getting Started with Create React App
+# MovieFlix - Movie Streaming Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern movie streaming platform built with React, Material-UI, and MongoDB.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 🎬 **Movie & TV Show Browsing**: Browse through a vast collection of movies and TV shows
+- 👤 **User Authentication**: Secure signup and login with MongoDB backend
+- 📝 **Personal Watchlist**: Add movies and shows to your personal list
+- ⭐ **Favorites**: Mark your favorite content
+- 📱 **Responsive Design**: Works perfectly on all devices
+- 🎨 **Modern UI**: Beautiful Material-UI design with dark theme
+- 🔒 **Secure Backend**: JWT authentication with MongoDB
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Frontend
+- React 19.1.1
+- Material-UI 7.3.1
+- React Router DOM 7.8.2
+- Framer Motion 12.23.12
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Backend
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT Authentication
+- bcryptjs for password hashing
 
-### `npm test`
+## Setup Instructions
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
+- Node.js (v16 or higher)
+- MongoDB (local installation or MongoDB Atlas)
+- npm or yarn
 
-### `npm run build`
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd my-react-website
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 2. Install Frontend Dependencies
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 3. Install Backend Dependencies
+```bash
+cd server
+npm install
+cd ..
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 4. Setup MongoDB
+Make sure MongoDB is running on your system. If you're using MongoDB Atlas, update the connection string in `server/config.env`.
 
-### `npm run eject`
+### 5. Configure Environment Variables
+Edit `server/config.env`:
+```env
+MONGODB_URI=mongodb://localhost:27017/movieflix
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+PORT=5000
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 6. Start the Backend Server
+```bash
+cd server
+npm run dev
+```
+The server will start on `http://localhost:5000`
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 7. Start the Frontend Application
+In a new terminal:
+```bash
+npm start
+```
+The application will start on `http://localhost:3000`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## API Endpoints
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Authentication
+- `POST /api/auth/signup` - Register a new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/user` - Get current user (protected)
 
-## Learn More
+### Request/Response Examples
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### Signup
+```json
+POST /api/auth/signup
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Response:
+{
+  "success": true,
+  "user": {
+    "_id": "...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "avatar": "...",
+    "joinDate": "2024-01-01T00:00:00.000Z"
+  },
+  "token": "jwt_token_here"
+}
+```
 
-### Code Splitting
+#### Login
+```json
+POST /api/auth/login
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Response:
+{
+  "success": true,
+  "user": {
+    "_id": "...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "avatar": "..."
+  },
+  "token": "jwt_token_here"
+}
+```
 
-### Analyzing the Bundle Size
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+my-react-website/
+├── src/
+│   ├── components/
+│   │   ├── Login.js
+│   │   ├── Signup.js
+│   │   ├── Header.js
+│   │   ├── Footer.js
+│   │   ├── Home.js
+│   │   └── ...
+│   ├── contexts/
+│   │   └── AuthContext.js
+│   ├── App.js
+│   └── index.js
+├── server/
+│   ├── models/
+│   │   └── User.js
+│   ├── routes/
+│   │   └── auth.js
+│   ├── middleware/
+│   │   └── auth.js
+│   ├── server.js
+│   ├── package.json
+│   └── config.env
+└── package.json
+```
 
-### Making a Progressive Web App
+## Features in Detail
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### User Authentication
+- Secure signup with email validation
+- Password hashing with bcryptjs
+- JWT token-based authentication
+- Automatic token verification on app load
 
-### Advanced Configuration
+### User Profile
+- Display user information
+- Show watchlist and favorites
+- User statistics (watched, watching, plan to watch)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Movie & TV Show Features
+- Browse movies and TV shows
+- View detailed information
+- Add to watchlist/favorites
+- Search functionality
+- Responsive movie carousel
 
-### Deployment
+## Security Features
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Password hashing with bcryptjs
+- JWT token authentication
+- Input validation and sanitization
+- CORS protection
+- Environment variable configuration
 
-### `npm run build` fails to minify
+## Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+If you encounter any issues or have questions, please open an issue on GitHub.
