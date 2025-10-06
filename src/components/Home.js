@@ -1,76 +1,74 @@
-import React from 'react';
-import { Container, Typography, Button, Box, Grid, Card, CardContent, Paper, Chip } from '@mui/material';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, Button, Box, Grid, Card, CardContent, Paper, Chip, Fab, Tooltip } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
 import MovieCarousel from './MovieCarousel';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StarIcon from '@mui/icons-material/Star';
 import { useAuth } from '../contexts/AuthContext';
+import AddMovieForm from './AddMovieForm';
+import { getTrendingMovies, seedDefaultMovies } from '../utils/movieApi';
+import { getResponsiveImageContainerStyles, getStandardCardStyles } from '../styles/imageConstants';
 
-const featuredMovies = [
-  {
-    id: 1,
-    title: 'Inception',
-    image: 'https://m.media-amazon.com/images/S/pv-target-images/cc72ff2193c0f7a85322aee988d6fe1ae2cd9f8800b6ff6e8462790fe2aacaf3.jpg',
-    year: 2010,
-    rating: 4.8,
-    genre: ['Sci-Fi', 'Action', 'Thriller'],
-    director: 'Christopher Nolan',
-    duration: '2h 28m'
-  },
-  {
-    id: 1,
-    title: 'Avatar',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_tMDmGpdUANiBhrYP30GLPrVvcNZed4sTeA&s',
-    year: 2010,
-    rating: 4.8,
-    genre: ['Sci-Fi', 'Action', 'Thriller'],
-    director: 'Christopher Nolan',
-    duration: '2h 28m'
-  },
-  {
-    id: 2,
-    title: 'The Shawshank Redemption',
-    image: 'https://static.toiimg.com/photo/61267668.cms',
-    year: 1994,
-    rating: 4.9,
-    genre: ['Drama'],
-    director: 'Frank Darabont',
-    duration: '2h 22m'
-  },
-  {
-    id: 3,
-    title: 'The Dark Knight',
-    image: 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
-    year: 2008,
-    rating: 4.9,
-    genre: ['Action', 'Crime', 'Drama'],
-    director: 'Christopher Nolan',
-    duration: '2h 32m'
-  },
-  {
-    id: 4,
-    title: 'Pulp Fiction',
-    image: 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg',
-    year: 1994,
-    rating: 4.8,
-    genre: ['Crime', 'Drama'],
-    director: 'Quentin Tarantino',
-    duration: '2h 34m'
-  },
-  {
-    id: 5,
-    title: 'The Godfather',
-    image: 'https://m.media-amazon.com/images/M/MV5BNGEwYjgwOGQtYjg5ZS00Njc1LTk2ZGEtM2QwZWQ2NjdhZTE5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
-    year: 1972,
-    rating: 4.9,
-    genre: ['Crime', 'Drama'],
-    director: 'Francis Ford Coppola',
-    duration: '2h 55m'
-  }
-];
 
 const Home = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Load trending movies from API on component mount
+  useEffect(() => {
+    const loadTrendingMovies = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Try to get trending movies from API
+        const response = await getTrendingMovies({ limit: 12 });
+        
+        if (response.data && response.data.length > 0) {
+          setTrendingMovies(response.data);
+        } else {
+          // If no movies exist and user is admin, seed default data
+          if (currentUser && currentUser.role === 'admin') {
+            console.log('No movies found. Attempting to seed default data...');
+            const seeded = await seedDefaultMovies();
+            if (seeded) {
+              // Reload movies after seeding
+              const retryResponse = await getTrendingMovies({ limit: 12 });
+              setTrendingMovies(retryResponse.data || []);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading trending movies:', error);
+        setError(error.message);
+        // Fall back to empty array if API fails
+        setTrendingMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadTrendingMovies();
+  }, [currentUser]);
+  
+  const handleAddSuccess = async (newMovie) => {
+    // Reload trending movies from API after successful add/edit
+    if (newMovie) {
+      try {
+        const response = await getTrendingMovies({ limit: 12 });
+        setTrendingMovies(response.data || []);
+        console.log('Trending movie added/updated successfully!', newMovie);
+      } catch (error) {
+        console.error('Error reloading movies after add:', error);
+        // If reload fails, just add the movie to current state
+        setTrendingMovies(prev => [newMovie, ...prev.slice(0, 11)]);
+      }
+    }
+  };
   
   return (
     <Box sx={{ backgroundColor: '#0f0f1a', color: 'white' }}>
@@ -148,109 +146,102 @@ const Home = () => {
           </Typography>
         </Box>
         
-        <Grid container spacing={3}>
-          {featuredMovies.map((movie) => (
-            <Grid item xs={12} sm={6} md={3} key={movie.id}>
-              <Card sx={{ 
-                bgcolor: '#1a1a2e', 
-                color: 'white',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-10px)',
-                  boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
-                }
-              }}>
-                <Box sx={{ 
-                  position: 'relative', 
-                  width: '100%',
-                  height: '400px', // Fixed height for all images
-                  overflow: 'hidden',
-                  '&:hover img': {
-                    transform: 'scale(1.05)'
-                  }
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+            <Typography variant="h6" sx={{ color: '#ccc' }}>Loading trending movies...</Typography>
+          </Box>
+        ) : error ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+            <Typography variant="h6" sx={{ color: '#ff4d4d' }}>Error loading movies: {error}</Typography>
+          </Box>
+        ) : trendingMovies.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+            <Typography variant="h6" sx={{ color: '#ccc' }}>No trending movies available</Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3} justifyContent="center">
+            {trendingMovies.map((movie) => (
+              <Grid item key={movie._id || movie.id} xs={12} sm={6} md={4} lg={3} xl={2}>
+                <Card sx={{ 
+                  ...getStandardCardStyles(),
+                  bgcolor: '#1a1a2e', 
+                  color: 'white'
                 }}>
-                  <img 
-                    src={movie.image} 
-                    alt={movie.title}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'transform 0.5s ease',
-                      display: 'block'
-                    }}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
-                    }}
-                  />
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    color: 'gold',
-                    borderRadius: '4px',
-                    padding: '4px 8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '0.9rem'
-                  }}>
-                    <StarIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    {movie.rating}
-                  </Box>
-                </Box>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h6" component="h3" sx={{ 
-                    fontWeight: 'bold',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {movie.title}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
-                    {movie.genre.map((g, i) => (
-                      <Chip 
-                        key={i} 
-                        label={g} 
-                        size="small" 
-                        sx={{ 
-                          bgcolor: 'rgba(255,255,255,0.1)', 
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          height: '24px'
-                        }} 
-                      />
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {movie.year} • {movie.duration}
-                    </Typography>
-                    <Button 
-                      variant="contained" 
-                      size="small" 
-                      color="secondary"
-                      sx={{ 
-                        borderRadius: '15px',
-                        textTransform: 'none',
-                        fontSize: '0.8rem',
-                        padding: '4px 12px',
-                        minWidth: '80px'
+                  <Box sx={getResponsiveImageContainerStyles()}>
+                    <img 
+                      src={trendingMovies.indexOf(movie) === 0 ? 'https://upload.wikimedia.org/wikipedia/en/5/52/Dune_Part_Two_poster.jpeg' : movie.image} 
+                      alt={movie.title}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
                       }}
-                    >
-                      View Details
-                    </Button>
+                    />
+                    <Box sx={{
+                      position: 'absolute',
+                      top: 10,
+                      right: 10,
+                      backgroundColor: 'rgba(0,0,0,0.8)',
+                      color: 'gold',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '0.9rem'
+                    }}>
+                      <StarIcon fontSize="small" sx={{ mr: 0.5 }} />
+                      {movie.rating}
+                    </Box>
                   </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h6" component="h3" sx={{ 
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {movie.title}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                      {movie.genre.map((g, i) => (
+                        <Chip 
+                          key={i} 
+                          label={g} 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: '24px'
+                          }} 
+                        />
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {movie.year} • {movie.duration || movie.formattedDuration || (movie.category === 'tv-show' ? `${movie.seasons} Season${movie.seasons > 1 ? 's' : ''}` : 'N/A')}
+                      </Typography>
+                      <Button 
+                        variant="contained" 
+                        size="small" 
+                        color="secondary"
+                        onClick={() => navigate(`/movies/${movie._id || movie.id}`)}
+                        sx={{ 
+                          borderRadius: '15px',
+                          textTransform: 'none',
+                          fontSize: '0.8rem',
+                          padding: '4px 12px',
+                          minWidth: '80px'
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Container>
       
       {/* Categories Section */}
@@ -383,6 +374,15 @@ const Home = () => {
           </Box>
         </Container>
       </Box>
+      
+      
+      {/* Add Trending Movie Form Dialog */}
+      <AddMovieForm
+        open={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        category="trending"
+        onSuccess={handleAddSuccess}
+      />
     </Box>
   );
 };

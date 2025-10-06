@@ -59,12 +59,16 @@ const Header = () => {
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <NavButton color="inherit" component={Link} to="/">Home</NavButton>
-            <NavButton color="inherit" component={Link} to="/trending">Trending</NavButton>
             <NavButton color="inherit" component={Link} to="/movies">Movies</NavButton>
             <NavButton color="inherit" component={Link} to="/tv-shows">TV Shows</NavButton>
-            <NavButton color="inherit" component={Link} to="/my-list">My List</NavButton>
+            {currentUser && (
+              <NavButton color="inherit" component={Link} to="/my-list">My List</NavButton>
+            )}
             {currentUser ? (
               <>
+                {currentUser.role === 'admin' && (
+                  <NavButton color="inherit" component={Link} to="/admin">Admin</NavButton>
+                )}
                 <Button 
                   variant="contained" 
                   color="primary" 

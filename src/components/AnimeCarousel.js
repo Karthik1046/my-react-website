@@ -8,7 +8,7 @@ const animeSlides = [
     id: 1,
     title: 'Attack on Titan: Final Season',
     description: 'The war for Paradis zeroes in on the mysteries of the Titans and the dark history of the world.',
-    image: '/images/aot.jpg',
+    image: '',
     genre: 'Action, Drama, Fantasy'
   },
   {

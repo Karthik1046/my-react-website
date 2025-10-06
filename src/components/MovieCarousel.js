@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Box, IconButton, useTheme, Typography } from '@mui/material';
+import { Box, IconButton, useTheme, Typography, Snackbar, Alert } from '@mui/material';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMyList } from '../contexts/MyListContext';
 
 const movieSlides = [
   {
     id: 1,
     title: 'The Shawshank Redemption',
     description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
-    image: 'https://www.criticfilm.com/wp-content/uploads/2024/02/the-shawshank-redemption-book-vs-movie.jpg',
-    genre: 'Drama',
+    image: 'https://visitboise.com/wp-content/uploads/2024/01/The-Shawshank-Redemption-1994.jpg',
+    genre: ['Drama'],
     year: 1994,
     rating: 4.9
   },
@@ -17,8 +18,8 @@ const movieSlides = [
     id: 2,
     title: 'The Godfather',
     description: 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.',
-    image: 'https://ntvb.tmsimg.com/assets/p6326_v_h8_be.jpg?w=960&h=540',
-    genre: 'Crime, Drama',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTz2rr4EBGvAnbC0FfFJnHDaLmITxO2_Pd3fg&s',
+    genre: ['Crime', 'Drama'],
     year: 1972,
     rating: 4.8
   },
@@ -26,8 +27,8 @@ const movieSlides = [
     id: 3,
     title: 'The Dark Knight',
     description: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.',
-    image: 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
-    genre: 'Action, Crime, Drama',
+    image: 'https://assets.murphysmultiverse.com/uploads/2022/02/knight.jpg',
+    genre: ['Action', 'Crime', 'Drama'],
     year: 2008,
     rating: 4.9
   },
@@ -35,8 +36,8 @@ const movieSlides = [
     id: 4,
     title: 'Pulp Fiction',
     description: 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.',
-    image: 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg',
-    genre: 'Crime, Drama',
+    image: 'https://prod5.agileticketing.net/images/user/loft_4255/Pulp_Fiction_TMDB-jlVOS4D6ledQGxGdL0EIte3TXfL.jpg',
+    genre: ['Crime', 'Drama'],
     year: 1994,
     rating: 4.8
   },
@@ -44,8 +45,8 @@ const movieSlides = [
     id: 5,
     title: 'Inception',
     description: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.',
-    image: 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg',
-    genre: 'Action, Adventure, Sci-Fi',
+    image: 'https://wallpapers.com/images/hd/inception-movie-poster-dream-is-real-9ei1rpyath620n92.jpg',
+    genre: ['Action', 'Adventure', 'Sci-Fi'],
     year: 2010,
     rating: 4.8
   }
@@ -54,7 +55,9 @@ const movieSlides = [
 const MovieCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const theme = useTheme();
+  const { toggleMyList, isInMyList } = useMyList();
 
   const nextSlide = () => {
     setDirection(1);
@@ -68,6 +71,37 @@ const MovieCarousel = () => {
     setCurrentIndex((prevIndex) => 
       prevIndex === 0 ? movieSlides.length - 1 : prevIndex - 1
     );
+  };
+
+  const handleMyList = () => {
+    const currentMovie = {
+      ...movieSlides[currentIndex],
+      // Ensure all required fields are included
+      poster_path: movieSlides[currentIndex].image,
+      release_date: movieSlides[currentIndex].year.toString(),
+      overview: movieSlides[currentIndex].description,
+      vote_average: movieSlides[currentIndex].rating,
+      genre: movieSlides[currentIndex].genre
+    };
+    
+    const isInList = isInMyList(currentMovie.id, 'movie');
+    
+    // Toggle the movie in the list
+    toggleMyList(currentMovie, 'movie').then(() => {
+      // Update the snackbar after the state has been updated
+      setSnackbar({
+        open: true,
+        message: isInList ? 'Removed from My List' : 'Added to My List',
+        severity: 'success'
+      });
+    }).catch(error => {
+      console.error('Error updating My List:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update My List',
+        severity: 'error'
+      });
+    });
   };
 
   // Auto-advance slides every 5 seconds
@@ -152,7 +186,7 @@ const MovieCarousel = () => {
                 </Box>
                 <span>{movieSlides[currentIndex].year}</span>
                 <span style={{ margin: '0 8px' }}>•</span>
-                <span>{movieSlides[currentIndex].genre}</span>
+                <span>{Array.isArray(movieSlides[currentIndex].genre) ? movieSlides[currentIndex].genre.join(', ') : movieSlides[currentIndex].genre}</span>
               </Box>
             </motion.div>
             
@@ -198,21 +232,33 @@ const MovieCarousel = () => {
               }}>
                 Watch Now
               </button>
-              <button style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                padding: '12px 30px',
-                borderRadius: '30px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                }
-              }}>
-                + My List
+              <button 
+                onClick={handleMyList}
+                style={{
+                  backgroundColor: isInMyList(movieSlides[currentIndex].id, 'movie') 
+                    ? 'rgba(255, 77, 77, 0.8)' 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  padding: '12px 30px',
+                  borderRadius: '30px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = isInMyList(movieSlides[currentIndex].id, 'movie')
+                    ? 'rgba(255, 77, 77, 1)'
+                    : 'rgba(255, 255, 255, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = isInMyList(movieSlides[currentIndex].id, 'movie')
+                    ? 'rgba(255, 77, 77, 0.8)'
+                    : 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                {isInMyList(movieSlides[currentIndex].id, 'movie') ? '✓ In My List' : '+ My List'}
               </button>
             </motion.div>
           </Box>
@@ -297,6 +343,22 @@ const MovieCarousel = () => {
           />
         ))}
       </Box>
+      
+      {/* Snackbar for My List notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -74,6 +74,51 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateUser = async (userData) => {
+    try {
+      const token = localStorage.getItem('movieflix_token');
+      if (!token) {
+        console.error('No token found in localStorage');
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      console.log('Sending update request with data:', userData);
+      
+      const response = await fetch('http://localhost:5000/api/auth/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userData)
+      });
+      
+      const data = await response.json();
+      console.log('Update response:', data);
+      
+      if (data.success) {
+        // Update local storage and state with new user data
+        const updatedUser = {
+          ...data.user,
+          // Ensure avatar URL is absolute
+          avatar: data.user.avatar && !data.user.avatar.startsWith('http')
+            ? `http://localhost:5000${data.user.avatar}`
+            : data.user.avatar
+        };
+        
+        localStorage.setItem('movieflix_user', JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser);
+        return { success: true, user: updatedUser };
+      } else {
+        console.error('Update failed:', data.error);
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      return { success: false, error: 'Failed to update profile. Please try again.' };
+    }
+  };
+
   const register = async (email, password, name) => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/signup', {
@@ -176,6 +221,22 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const toggleWatchlist = (item) => {
+    if (isInWatchlist(item.id)) {
+      removeFromWatchlist(item.id);
+    } else {
+      addToWatchlist(item);
+    }
+  };
+
+  const toggleFavorite = (item) => {
+    if (isInFavorites(item.id)) {
+      removeFromFavorites(item.id);
+    } else {
+      addToFavorites(item);
+    }
+  };
+
   const isInWatchlist = (itemId) => {
     return watchlist.some(item => item.id === itemId);
   };
@@ -186,19 +247,22 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    loading,
     login,
-    loginWithGoogle,
     register,
+    loginWithGoogle,
     logout,
+    updateUser,
     watchlist,
+    toggleWatchlist,
     addToWatchlist,
     removeFromWatchlist,
     favorites,
+    toggleFavorite,
     addToFavorites,
     removeFromFavorites,
     isInWatchlist,
-    isInFavorites,
-    loading
+    isInFavorites
   };
 
   return (
@@ -214,4 +278,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}

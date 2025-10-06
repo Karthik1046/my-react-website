@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Grid, Button, Divider } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,12 +14,16 @@ const UserProfile = () => {
     email = 'user@example.com',
     joinDate = new Date().toLocaleDateString(),
     bio = 'Tell us about yourself...',
+    avatar,
     stats = {
       watched: 0,
       watching: 0,
       planToWatch: 0
     }
   } = currentUser || {};
+  
+  // Use the avatar from the user data or fallback to generated avatar
+  const avatarUrl = avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1976d2&color=fff`;
   
   // Format join date properly
   const formatJoinDate = (dateString) => {
@@ -34,18 +39,34 @@ const UserProfile = () => {
     }
   };
   
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1976d2&color=fff`;
+
+  const handleEditClick = () => {
+    navigate('/profile/edit');
+  };
 
   return (
     <Box sx={{ maxWidth: 1000, margin: '40px auto', padding: 3 }}>
-      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
+      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2, position: 'relative' }}>
+        {/* Edit Button */}
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <Button 
+            variant="outlined" 
+            color="primary"
+            onClick={handleEditClick}
+            startIcon={<EditIcon />}
+          >
+            Edit Profile
+          </Button>
+        </Box>
+        
         {/* Welcome Message */}
         <Box sx={{ mb: 4, textAlign: 'center' }}>
           <Typography variant="h4" component="h1" gutterBottom sx={{ 
             fontWeight: 'bold',
             background: 'linear-gradient(90deg, #ff4d4d, #f9cb28)',
             WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            WebkitTextFillColor: 'transparent',
+            pt: 1 // Add some padding to account for the absolute positioned button
           }}>
             Welcome to Your Profile, {name}! 👋
           </Typography>
@@ -61,7 +82,21 @@ const UserProfile = () => {
               <Avatar 
                 src={avatarUrl} 
                 alt={name}
-                sx={{ width: 150, height: 150, mb: 2, fontSize: '3rem' }}
+                sx={{ 
+                  width: 150, 
+                  height: 150, 
+                  mb: 2, 
+                  fontSize: '3rem',
+                  border: '3px solid #f5f5f5',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                }}
+                imgProps={{
+                  style: {
+                    objectFit: 'cover',
+                    width: '100%',
+                    height: '100%'
+                  }
+                }}
               />
               <Typography variant="h5" component="h1" gutterBottom align="center">
                 {name}

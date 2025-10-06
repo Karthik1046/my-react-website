@@ -51,7 +51,15 @@ const userSchema = new mongoose.Schema({
     title: String,
     type: String, // 'movie' or 'tv'
     addedDate: { type: Date, default: Date.now }
-  }]
+  }],
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  lastLoginAt: {
+    type: Date
+  }
 }, {
   timestamps: true
 });

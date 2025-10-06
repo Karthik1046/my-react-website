@@ -6,10 +6,12 @@ import { Box, Snackbar, Alert } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { MyListProvider } from './contexts/MyListContext';
 import Header from './components/Header';
 import Home from './components/Home';
 import Footer from './components/Footer';
 import UserProfile from './components/UserProfile';
+import EditProfile from './components/EditProfile';
 import Calculator from './components/Calculator';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -17,6 +19,7 @@ import MovieDetails from './components/MovieDetails';
 import MovieList from './components/MovieList';
 import TVShows from './components/TVShows';
 import MyList from './components/MyList';
+import AdminPanel from './components/AdminPanel';
 
 const theme = createTheme({
   palette: {
@@ -106,16 +109,22 @@ const AppContent = () => {
               <UserProfile />
             </PrivateRoute>
           } />
+          <Route path="/profile/edit" element={
+            <PrivateRoute>
+              <EditProfile />
+            </PrivateRoute>
+          } />
           <Route path="/movies" element={<MovieList />} />
           <Route path="/movies/:id" element={<MovieDetails />} />
           <Route path="/tv-shows" element={<TVShows />} />
-          <Route path="/trending" element={<MovieList category="trending" />} />
-          <Route path="/my-list" element={
+          <Route path="/tv-shows/:id" element={<MovieDetails />} />
+          <Route path="/my-list" element={<MyList />} />
+          <Route path="/calculator" element={<Calculator />} />
+          <Route path="/admin" element={
             <PrivateRoute>
-              <MyList />
+              <AdminPanel />
             </PrivateRoute>
           } />
-          <Route path="/calculator" element={<Calculator />} />
         </Routes>
       </Box>
       <Footer />
@@ -150,7 +159,9 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <AppContent />
+        <MyListProvider>
+          <AppContent />
+        </MyListProvider>
       </AuthProvider>
     </ThemeProvider>
   );

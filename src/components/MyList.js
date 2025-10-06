@@ -9,35 +9,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import { useAuth } from '../contexts/AuthContext';
-
-// Mock data
-const mockMyList = {
-  movies: [
-    {
-      id: 1,
-      title: 'Dune: Part Two',
-      image: 'https://m.media-amazon.com/images/M/MV5BZGFiMWFhNDAtMzUyZS00NmQ2LTljNDYtMmZjNTc5MDUxMzViXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_.jpg',
-      year: 2024,
-      rating: 4.8,
-      genre: ['Sci-Fi', 'Adventure'],
-      addedDate: '2024-03-15',
-      type: 'movie'
-    }
-  ],
-  tvShows: [
-    {
-      id: 101,
-      title: 'Stranger Things',
-      image: 'https://m.media-amazon.com/images/M/MV5BMDZkYmVhNjMtNWU4MC00MDQxLWE3MjYtZGMzZDE1MzhlYzZiXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_.jpg',
-      year: '2016-Present',
-      rating: 4.8,
-      genre: ['Drama', 'Fantasy', 'Horror'],
-      addedDate: '2024-03-05',
-      type: 'tv',
-      seasons: 4
-    }
-  ]
-};
+import { useMyList } from '../contexts/MyListContext';
 
 const StyledTabs = styled(Tabs)({
   '& .MuiTabs-indicator': { backgroundColor: '#ff4d4d', height: '3px' },
@@ -53,45 +25,13 @@ const StyledTab = styled(Tab)({
 
 const MyList = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [myList, setMyList] = useState({ movies: [], tvShows: [] });
-  const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const { currentUser } = useAuth();
+  const { myList, removeFromMyList } = useMyList();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchMyList = async () => {
-      setLoading(true);
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setMyList(mockMyList);
-      } catch (error) {
-        setSnackbar({
-          open: true,
-          message: 'Failed to load your list.',
-          severity: 'error'
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (currentUser) fetchMyList();
-  }, [currentUser]);
-
   const handleRemoveItem = (id, type) => {
-    if (type === 'movie') {
-      setMyList(prev => ({
-        ...prev,
-        movies: prev.movies.filter(movie => movie.id !== id)
-      }));
-    } else {
-      setMyList(prev => ({
-        ...prev,
-        tvShows: prev.tvShows.filter(show => show.id !== id)
-      }));
-    }
-    
+    removeFromMyList(id, type);
     setSnackbar({
       open: true,
       message: 'Item removed from your list',
@@ -130,11 +70,7 @@ const MyList = () => {
         <StyledTab label={`TV Shows (${myList.tvShows.length})`} />
       </StyledTabs>
 
-      {loading ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography>Loading your list...</Typography>
-        </Box>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Your {tabValue === 0 ? 'movies' : 'TV shows'} list is empty
@@ -156,11 +92,28 @@ const MyList = () => {
         <Grid container spacing={3}>
           {items.map((item) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={`${item.type}-${item.id}`}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#1a1a1a' }}>
+              <Card 
+                sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  bgcolor: '#1a1a1a',
+                  cursor: 'pointer',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 25px rgba(255, 77, 77, 0.3)'
+                  }
+                }}
+                onClick={() => {
+                  const route = item.type === 'movie' ? `/movies/${item.id}` : `/tv-shows/${item.id}`;
+                  navigate(route);
+                }}
+              >
                 <Box sx={{ pt: '150%', position: 'relative' }}>
                   <CardMedia
                     component="img"
-                    image={item.image}
+                    image={item.poster_path || item.image || 'https://via.placeholder.com/300x450?text=No+Image'}
                     alt={item.title}
                     sx={{
                       position: 'absolute',
@@ -170,9 +123,16 @@ const MyList = () => {
                       height: '100%',
                       objectFit: 'cover',
                     }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+                    }}
                   />
                   <IconButton
-                    onClick={() => handleRemoveItem(item.id, item.type)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveItem(item.id, item.type);
+                    }}
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -190,17 +150,17 @@ const MyList = () => {
                     {item.title}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                    {item.genre.slice(0, 2).map((g, i) => (
+                    {(item.genre || []).slice(0, 2).map((g, i) => (
                       <Chip key={i} label={g} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }} />
                     ))}
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
-                      {item.year}
+                      {(item.release_date || item.first_air_date || item.year || '').toString().split('-')[0]}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <StarIcon sx={{ color: 'gold', fontSize: '1rem', mr: 0.5 }} />
-                      <Typography variant="caption">{item.rating}</Typography>
+                      <Typography variant="caption">{(item.vote_average || item.rating || 0).toFixed(1)}</Typography>
                     </Box>
                   </Box>
                 </CardContent>
